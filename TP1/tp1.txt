@@ -1,0 +1,21 @@
+a). final_state([[1, 2, 3, 4], [5, 6, 7, 8], [9, 10, 11, 12], [13, 14, 15, vide]]).
+
+b).	- coordonnées de d à l'état initial.
+	- pièce située aux coordonnées L = 3 et C = 2.
+
+c). initial_state(Ini), final_state(Fin), nth1(L, Ini, Ligne), nth1(C, Ligne, a), nth1(L, Fin, Ligne2), nth1(C, Ligne2, a).
+
+d). initial_state(Ini), rule(Move, 1, Ini, Next).
+
+e). findall(Next, (initial_state(Ini), rule(Move, 1, Ini, Next)), Successors).
+
+f). findall([Move, Next], (initial_state(Ini), rule(Move, 1, Ini, Next)), Successors).
+
+
+	h1	h2
+1	3	19
+2	2	1
+3	6	4
+4	timeout	16
+5	timeout	timeout
+6	timeout	timeout

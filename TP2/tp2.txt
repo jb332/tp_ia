@@ -1,0 +1,4 @@
+1.2 :
+
+- S est la situation initiale et J est le joueur initial
+- place un rond à la troisième ligne, deuxième colonne de la matrice S

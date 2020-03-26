@@ -1,0 +1,20 @@
+nil
+G = 0  H = 5
+
+
+avl(nil,[[[b,h,c],[a,f,d],[g,vide,e]],[5,5,0],nil,nil],nil,0)
+G = 1  H = 4
+
+
+avl(nil,[[[b,h,c],[a,f,d],[g,vide,e]],[5,5,0],nil,nil],avl(nil,[[[b,h,c],[a,vide,d],[g,f,e]],[5,4,1],[[b,h,c],[a,f,d],[g,vide,e]],up],nil,0),1)
+G = 2  H = 3
+
+
+avl(avl(nil,[[[b,h,c],[a,f,d],[g,vide,e]],[5,5,0],nil,nil],nil,0),[[[b,h,c],[a,vide,d],[g,f,e]],[5,4,1],[[b,h,c],[a,f,d],[g,vide,e]],up],avl(nil,[[[b,vide,c],[a,h,d],[g,f,e]],[5,3,2],[[b,h,c],[a,vide,d],[g,f,e]],up],nil,0),1)
+G = 3  H = 2
+
+
+avl(avl(nil,[[[b,h,c],[a,f,d],[g,vide,e]],[5,5,0],nil,nil],nil,0),[[[b,h,c],[a,vide,d],[g,f,e]],[5,4,1],[[b,h,c],[a,f,d],[g,vide,e]],up],avl(nil,[[[b,vide,c],[a,h,d],[g,f,e]],[5,3,2],[[b,h,c],[a,vide,d],[g,f,e]],up],avl(nil,[[[vide,b,c],[a,h,d],[g,f,e]],[5,2,3],[[b,vide,c],[a,h,d],[g,f,e]],left],nil,0),1),2)
+G = 4  H = 1
+
+
