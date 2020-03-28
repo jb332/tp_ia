@@ -47,6 +47,12 @@ Predicat principal de l'algorithme :
 
 %*******************************************************************************
 
+print_list([]).
+print_list([H|T]) :-
+    writeln(H),
+    print_list(T).
+
+
 affiche_solution(nil, _).
 
 
@@ -77,6 +83,16 @@ expand(U, Successors, G) :-
         ),
         Successors			 % liste qui regroupe tous les états successeurs avec leurs coûts, heuristiques, etc.
     ).
+
+test_expand :-
+    U0 = [[b, h, c], [a, f, d], [g, vide, e]],
+    G0 = 0,
+    writeln('U0 :'),
+    writeln(U0),
+    nl,
+    expand(U0, Successors, G0),
+    writeln('Successors :'),
+    print_list(Successors).
 
 loop_successors([], Pf, Pu, _, Pf, Pu). % cas trivial : s'il n'y a plus de successeurs alors on fait remonter les entrées Pf et Pu en sortie
 
@@ -121,7 +137,27 @@ loop_successors([[S, [F, H, G], U, A] | Rest], Pf, Pu, Qs, Pf_ret, Pu_ret) :- % 
     insert([S, [F, H, G], U, A], Pu, Pu_new),			% insère le successeur dans Pu
     insert([[F, H, G], S], Pf, Pf_new),				% insère le successeur dans Pf
     loop_successors(Rest, Pf_new, Pu_new, Qs, Pf_ret, Pu_ret).
-    
+
+test_loop_successors :-
+    U0 = [[b, h, c], [a, f, d], [g, vide, e]],
+    G0 = 0,
+    expand(U0, Successors, G0),
+    empty(Pf),
+    empty(Pu),
+    empty(Qs),
+    loop_successors(Successors, Pf, Pu, Qs, Pf_new, Pu_new),
+    writeln('U0 ='),
+    writeln(U0),
+    nl,
+    writeln('Successors ='),
+    print_list(Successors),
+    nl,
+    writeln('Pf ='),
+    put_flat(Pf_new),
+    nl,
+    nl,
+    writeln('Pu ='),
+    put_flat(Pu_new).
 
 main :-
 	% initialisations Pf, Pu et Q

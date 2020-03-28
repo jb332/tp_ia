@@ -165,6 +165,41 @@ coordonnees([L,C], Mat, Elt) :-
     nth1(L, Mat, Ligne), % récupère la L-ième ligne dans la matrice du taquin
     nth1(C, Ligne, Elt). % récupère le C-ième élément dans cette ligne
 
+test_coordonnees :-
+    U0 = [[b, h, c], [a, f, d], [g, vide, e]],
+    U1 = [[a, d, e], [vide, c, b], [h, f, g]],
+    final_state(T),
+    write('U0 = '),
+    writeln(U0),
+    write('U1 = '),
+    writeln(U1),
+    write('T = '),
+    writeln(T),
+    nl,
+    coordonnees([2, 1], U0, E_U0),
+    coordonnees([3, 1], U1, E_U1),
+    coordonnees([2, 3], T, E_Ta),
+    coordonnees([1, 2], T, E_Tb),
+    writeln("U0[2, 1] ="),
+    writeln("Exepted : a"),
+    write("Gotten : "),
+    writeln(E_U0),
+    nl,
+    writeln("U1[3, 1] ="),
+    writeln("Exepted : h"),
+    write("Gotten : "),
+    writeln(E_U1),
+    nl,
+    writeln("T[2, 3] ="),
+    writeln("Expected : d"),
+    write("Gotten : "),
+    writeln(E_Ta),
+    nl,
+    writeln("T[1, 2] ="),
+    writeln("Expected : b"),
+    write("Gotten : "),
+    writeln(E_Tb).
+
 											 
    %*************
    % HEURISTIQUES
@@ -183,17 +218,38 @@ heuristique(U,H) :-
    
     heuristique1(U, H) :-
         findall(
-            P_U					% on veut regrouper les pieces P mal placees dans List
+            P_U            % on veut regrouper les pieces P mal placees dans List
             ,(
-                final_state(Fin),		% Fin : matrice état final
-                coordonnees(Coord, U, P_U),	% pour toutes les pieces P_U de U, récupère toutes les coordonnées Coord
-                coordonnees(Coord, Fin, P_Fin),	% récupère pour les coordonées Coord d'un pièce P_U de U, la pièce P_Fin ayant les coordonnées Coord dans Fin
-		P_U \= P_Fin,			% la clause sera vraie, et donc P_U sera dans List, si ces deux pièces sont différentes c'est-à-dire si P_U est mal placée dans U
-		P_U \= vide			% et si P_U est différente de vide
+                final_state(Fin),               % Fin : matrice état final
+                coordonnees(Coord, U, P_U),     % pour toutes les pieces P_U de U, récupère toutes les coordonnées Coord
+                coordonnees(Coord, Fin, P_Fin), % récupère pour les coordonées Coord d'un pièce P_U de U, la pièce P_Fin ayant les coordonnées Coord dans Fin
+                P_U \= P_Fin,                   % la clause sera vraie, et donc P_U sera dans List, si ces deux pièces sont différentes c'est-à-dire si P_U est mal placée dans U
+                P_U \= vide                     % et si P_U est différente de vide
             ),
-            List				% le findall met dans List toutes les pièces mal placées dans U (vide inclus)
+            List           % le findall met dans List toutes les pièces mal placées dans U (vide inclus)
         ),
-	length(List, H).			% H prend la taille de List c'est-à-dire le nombre de pièces mal placées
+        length(List, H).   % H prend la taille de List c'est-à-dire le nombre de pièces mal placées
+
+    test_heuristique1 :-
+        U0 = [[b, h, c], [a, f, d], [g, vide, e]],
+        U1 = [[a, d, e], [vide, c, b], [h, f, g]],
+        write('U0 = '),
+        writeln(U0),
+        write('U1 = '),
+        writeln(U1),
+        nl,
+        heuristique1(U0, H0),
+        heuristique1(U1, H1),
+        writeln("h1(U0) ="),
+        writeln("Exepted : 4"),
+        write("Gotten : "),
+        writeln(H0),
+        nl,
+        writeln("h1(U1) ="),
+        writeln("Exepted : 6"),
+        write("Gotten : "),
+        writeln(H1),
+        nl.
 
 
    %****************
@@ -204,16 +260,37 @@ heuristique(U,H) :-
    % entre sa position courante et sa positon dans l'etat final
 
     manhattan(P, U, M) :-
-        final_state(Fin),				% Fin : matrice état final
-        coordonnees([L_U, C_U], U, P),			% recupere les coordonnees de la piece P dans la matrice d'état U
-        coordonnees([L_Fin, C_Fin], Fin, P),		% recupere les coordonnees de la piece P dans la matrice d'état Fin
-        M is (abs(C_Fin - C_U) + abs(L_Fin - L_U)).	% calcule la distance de manhattan entre les coordonnees de P dans U et celles de P dans l'état final Fin
+        final_state(Fin),                           % Fin : matrice état final
+        coordonnees([L_U, C_U], U, P),              % recupere les coordonnees de la piece P dans la matrice d'état U
+        coordonnees([L_Fin, C_Fin], Fin, P),        % recupere les coordonnees de la piece P dans la matrice d'état Fin
+        M is (abs(C_Fin - C_U) + abs(L_Fin - L_U)). % calcule la distance de manhattan entre les coordonnees de P dans U et celles de P dans l'état final Fin
    
     heuristique2(U, H) :-
         findall(
-            M,						% on regroupe les distances de manhattan calculées pour chaque pièce dans la liste M_List
-            (manhattan(P, U, M), P \= vide),		% calcule la distance de manhattan pour toutes les places P de U, on exclut vide
-            M_List					% M_List : liste des distances de manhattan à parcourir par chaque pièce
+            M,                                      % on regroupe les distances de manhattan calculées pour chaque pièce dans la liste M_List
+            (manhattan(P, U, M), P \= vide),        % calcule la distance de manhattan pour toutes les places P de U, on exclut vide
+            M_List                                  % M_List : liste des distances de manhattan à parcourir par chaque pièce
         ),
-        sumlist(M_List, H).				% H prend la somme des distances de manhattan de la liste M_List
+        sumlist(M_List, H).                         % H prend la somme des distances de manhattan de la liste M_List
 
+
+    test_heuristique2 :-
+        U0 = [[b, h, c], [a, f, d], [g, vide, e]],
+        U1 = [[a, d, e], [vide, c, b], [h, f, g]],
+        write('U0 = '),
+        writeln(U0),
+        write('U1 = '),
+        writeln(U1),
+        nl,
+        heuristique2(U0, H0),
+        heuristique2(U1, H1),
+        writeln("h2(U0) ="),
+        writeln("Exepted : 5"),
+        write("Gotten : "),
+        writeln(H0),
+        nl,
+        writeln("h2(U1) ="),
+        writeln("Exepted : 11"),
+        write("Gotten : "),
+        writeln(H1),
+        nl.
