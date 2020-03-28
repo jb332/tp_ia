@@ -48,7 +48,7 @@ Predicat principal de l'algorithme :
 %*******************************************************************************
 
 affiche_solution(nil, _).
-    
+
 
 affiche_solution(Fin, Q) :-
     suppress([Fin, [_, H, G], Pere, A], Q, _),
@@ -57,33 +57,35 @@ affiche_solution(Fin, Q) :-
     %atomic_list_concat(['U = ', Fin, '  G = ', G, '  H = ', H, '  A = ', A], Str),
     %writeln(S),
 
-    writeln('U = '),
-    writeln(Fin),
-    writeln('  G = '),
-    writeln(G),
-    writeln('  H = '),
-    writeln(H),
-    writeln('  A = '),
-    writeln(A),
-    nl.
+    write('U = '),
+    write(Fin),
+    write('  G = '),
+    write(G),
+    write('  H = '),
+    write(H),
+    write('  A = '),
+    writeln(A).
 
 expand(U, Successors, G) :-
     findall(
-        [S, [F_new, H_new, G_new], U, A]
+        [S, [F_new, H_new, G_new], U, A] % forme d'un état successeur
         ,(
-            rule(A, 1, U, S),
-            heuristique(S, H_new),
-            G_new is G + 1,
-            F_new is G_new + H_new
+            rule(A, K, U, S),		 % renvoie les états successeurs de toutes les actions possible avec leurs coûts
+            heuristique(S, H_new),	 % calcule l'heuristique d'un état successeur
+            G_new is G + K,		 % calcule le coût d'un état successeur
+            F_new is G_new + H_new	 % calcule f = g + h
         ),
-        Successors
+        Successors			 % liste qui regroupe tous les états successeurs avec leurs coûts, heuristiques, etc.
     ).
 
-loop_successors([], Pf, Pu, _, Pf, Pu).
+loop_successors([], Pf, Pu, _, Pf, Pu). % cas trivial : s'il n'y a plus de successeurs alors on fait remonter les entrées Pf et Pu en sortie
 
-loop_successors([[S, _, _, _] | Rest], Pf, Pu, Qs, Pf_ret, Pu_ret) :-
+loop_successors([[S, _, _, _] | Rest], Pf, Pu, Qs, Pf_ret, Pu_ret) :- % si le successeur courant appartient à Q, on ne fait rien car le noeud a déjà été traité
     belongs([S, _, _, _], Qs),
     loop_successors(Rest, Pf, Pu, Qs, Pf_ret, Pu_ret).
+
+/*
+version avec if then else des deux clauses en-dessous
 
 loop_successors([[S, [F, H, G], U, A] | Rest], Pf, Pu, Qs, Pf_ret, Pu_ret) :-
     belongs([S, [F_old, _, _], _, _], Pu),
@@ -94,12 +96,30 @@ loop_successors([[S, [F, H, G], U, A] | Rest], Pf, Pu, Qs, Pf_ret, Pu_ret) :-
         insert([S, [F, H, G], U, A], Pu_aux, Pu_new),
         suppress([_, S], Pf, Pf_aux),
         insert([[F, H, G], S], Pf_aux, Pf_new)
+    ;
+	Pu_new = Pu,
+	Pf_new = Pf
     ),
     loop_successors(Rest, Pf_new, Pu_new, Qs, Pf_ret, Pu_ret).
+*/
 
-loop_successors([[S, [F, H, G], U, A] | Rest], Pf, Pu, Qs, Pf_ret, Pu_ret) :-
-    insert([S, [F, H, G], U, A], Pu, Pu_new),
-    insert([[F, H, G], S], Pf, Pf_new),
+loop_successors([[S, [F, H, G], U, A] | Rest], Pf, Pu, Qs, Pf_ret, Pu_ret) :- % si le successeur appartient à Pu et si la nouvelle valeur f est inférieure à l'existante, on la met à jour
+    belongs([S, [F_old, _, _], _, _], Pu),			% vérifie si le successeur appartient à P
+    F < F_old,							% vérifie si la nouvelle valeur F est inférieure à l'ancienne
+    suppress([S, _, _, _], Pu, Pu_aux),				% supprime S de Pu
+    insert([S, [F, H, G], U, A], Pu_aux, Pu_new),		% puis le réinsère avec la nouvelle valeur F inférieure
+    suppress([_, S], Pf, Pf_aux),				% idem avec Pf
+    insert([[F, H, G], S], Pf_aux, Pf_new),
+    loop_successors(Rest, Pf_new, Pu_new, Qs, Pf_ret, Pu_ret).
+
+loop_successors([[S, [F, _, _], _, _] | Rest], Pf, Pu, Qs, Pf_ret, Pu_ret) :- % si le successeur appartient à Pu et si la nouvelle valeur f est supérieure ou égale à l'ancienne, on ne fait rien
+    belongs([S, [F_old, _, _], _, _], Pu),			% vérifie si le successeur appartient à P
+    F >= F_old,							% vérifie si la nouvelle valeur F est supérieure ou égale à l'ancienne
+    loop_successors(Rest, Pf, Pu, Qs, Pf_ret, Pu_ret).
+
+loop_successors([[S, [F, H, G], U, A] | Rest], Pf, Pu, Qs, Pf_ret, Pu_ret) :- % sinon on insère le successeur dans P
+    insert([S, [F, H, G], U, A], Pu, Pu_new),			% insère le successeur dans Pu
+    insert([[F, H, G], S], Pf, Pf_new),				% insère le successeur dans Pf
     loop_successors(Rest, Pf_new, Pu_new, Qs, Pf_ret, Pu_ret).
     
 
@@ -109,45 +129,43 @@ main :-
 	% lancement de Aetoile
 
     statistics(runtime, [Start, _]),
-    initial_state(S0),
+    initial_state(S0),					%S0 : état initial
     G0 is 0,
     heuristique(S0, H0),
     F0 is G0 + H0,
-    empty(Pf_0),
-    empty(Pu_0),
-    empty(Qs),
-    insert([[F0, H0, G0], S0], Pf_0, Pf),
-    insert([S0, [F0, H0, G0], nil, nil], Pu_0, Pu),
+    empty(Pf_0),					% Pf arbre vide
+    empty(Pu_0),					% Pu arbre vide
+    empty(Qs),						% Qs arbre vide
+    insert([[F0, H0, G0], S0], Pf_0, Pf),		% on insère l'état initial dans Pf
+    insert([S0, [F0, H0, G0], nil, nil], Pu_0, Pu),	% et dans Pu
     aetoile(Pf, Pu, Qs),
     statistics(runtime, [Stop, _]),
     Runtime is Stop-Start,
-    writeln('Runtime = '),
+    write('Runtime = '),
     writeln(Runtime).
 
 %*******************************************************************************
 
-aetoile(Pf, Pu, _) :-
+aetoile(Pf, Pu, _) :-	% si P est vide alors la solution est inatteignable
     empty(Pf),
     empty(Pu),
     writeln('PAS de SOLUTION : L\'ETAT FINAL N\'EST PAS ATTEIGNABLE !').
 
 
-aetoile(Pf, Pu, Qs) :-
+aetoile(Pf, Pu, Qs) :-	% si l'état de P ayant le f le plus petit est l'état final alors l'algorithme est terminé et on affiche la solution
     suppress_min([_, U], Pf, _),
     suppress([U, [F, H, G], Pere, A], Pu, _),
     final_state(U),
     insert([U, [F, H, G], Pere, A], Qs, Qs_new),
-    affiche_solution(U, Qs_new),
-    !.
+    affiche_solution(U, Qs_new).
 
 
-aetoile(Pf, Pu, Qs) :-
-    suppress_min([[F, H, G], U], Pf, Pf_aux),
-    suppress([U, [F, H, G], Pere, A], Pu, Pu_aux),
-    expand(U, Successors, G),
-    loop_successors(Successors, Pf_aux, Pu_aux, Qs, Pf_new, Pu_new),
-
-    insert([U, [F, H, G], Pere, A], Qs, Qs_new),
+aetoile(Pf, Pu, Qs) :-	% sinon on enlève l'élément de P ayant le f le plus petit et on détermine ses successeurs, puis on les parcourt pour les traiter
+    suppress_min([[F, H, G], U], Pf, Pf_aux),				% on supprime l'état U qui a le plus petit f (h+g) de l'arbre des états pendants Pf
+    suppress([U, [F, H, G], Pere, A], Pu, Pu_aux),			% on supprime le même état dans l'arbre Pu
+    expand(U, Successors, G),						% on trouve les successeurs de U avec les actions possibles
+    loop_successors(Successors, Pf_aux, Pu_aux, Qs, Pf_new, Pu_new),	% on parcourt les successeurs de U et on les traite
+    insert([U, [F, H, G], Pere, A], Qs, Qs_new),			% on ajoute l'état U dans l'abre Q
     aetoile(Pf_new, Pu_new, Qs_new),
     !.
 

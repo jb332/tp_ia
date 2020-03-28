@@ -14,12 +14,13 @@
    % ETAT INITIAL DU JEU
    %********************   
    % format :  initial_state(+State) ou State est une matrice (liste de listes)
-   
-/*
+
+
 initial_state([ [b, h, c],       % C'EST L'EXEMPLE PRIS EN COURS
                 [a, f, d],       % 
                 [g,vide,e] ]).   % h1=4,   h2=5,   f*=5
 
+/*
 initial_state([ [a, b, c, d],
                 [e, f, g, h],
                 [i, j, k, l],
@@ -37,21 +38,19 @@ initial_state([ [ a, b, c],
 initial_state([ [b, c, d],
                 [a,vide,g],
                 [f, h, e]  ]). % h2=10 f*=10
-*/
 
 initial_state([ [f, g, a],
                 [h,vide,b],
                 [d, c, e]  ]). % h2=16, f*=20
-/*			
+		
 initial_state([ [e, f, g],
                 [d,vide,h],
                 [c, b, a]  ]). % h2=24, f*=30
 
 initial_state([ [a, b, c],
                 [g,vide,d],
-                [h, f, e]]). % etat non connexe avec l'etat final (PAS DE SOLUTION)
-*/  
-
+                [h, f, e]]). % etat non connexe avec l'etat final (PAS DE SOLUTION)  
+*/
 
    %******************
    % ETAT FINAL DU JEU
@@ -163,8 +162,8 @@ delete(N,X,[Y|L], [Y|R]) :-
 
 	
 coordonnees([L,C], Mat, Elt) :-
-    nth1(L, Mat, Ligne),
-    nth1(C, Ligne, Elt).
+    nth1(L, Mat, Ligne), % récupère la L-ième ligne dans la matrice du taquin
+    nth1(C, Ligne, Elt). % récupère le C-ième élément dans cette ligne
 
 											 
    %*************
@@ -172,31 +171,31 @@ coordonnees([L,C], Mat, Elt) :-
    %*************
    
 heuristique(U,H) :-
-    heuristique1(U, H).  % au debut on utilise l'heuristique 1 
-    %heuristique2(U, H).  % ensuite utilisez plutot l'heuristique 2  
-   
-   
+    %heuristique1(U, H).  % au debut on utilise l'heuristique 1
+    heuristique2(U, H).  % ensuite utilisez plutot l'heuristique 2
+
+
    %****************
    %HEURISTIQUE no 1
    %****************
    % Nombre de pieces mal placees dans l'etat courant U
    % par rapport a l'etat final F
-
+   
     heuristique1(U, H) :-
         findall(
-            P
+            P_U					% on veut regrouper les pieces P mal placees dans List
             ,(
-                final_state(Fin),
-                coordonnees(Coord, U, P),
-                coordonnees(Coord, Fin, P)
+                final_state(Fin),		% Fin : matrice état final
+                coordonnees(Coord, U, P_U),	% pour toutes les pieces P_U de U, récupère toutes les coordonnées Coord
+                coordonnees(Coord, Fin, P_Fin),	% récupère pour les coordonées Coord d'un pièce P_U de U, la pièce P_Fin ayant les coordonnées Coord dans Fin
+		P_U \= P_Fin,			% la clause sera vraie, et donc P_U sera dans List, si ces deux pièces sont différentes c'est-à-dire si P_U est mal placée dans U
+		P_U \= vide			% et si P_U est différente de vide
             ),
-            List
+            List				% le findall met dans List toutes les pièces mal placées dans U (vide inclus)
         ),
-	delete(List, vide, Final_List),
-        length(Final_List, G),
-	H is 8-G.
-   
-   
+	length(List, H).			% H prend la taille de List c'est-à-dire le nombre de pièces mal placées
+
+
    %****************
    %HEURISTIQUE no 2
    %****************
@@ -205,16 +204,16 @@ heuristique(U,H) :-
    % entre sa position courante et sa positon dans l'etat final
 
     manhattan(P, U, M) :-
-        final_state(Fin),
-        coordonnees([L_U, C_U], U, P),
-        coordonnees([L_Fin, C_Fin], Fin, P),
-        M is (abs(C_Fin - C_U) + abs(L_Fin - L_U)).
+        final_state(Fin),				% Fin : matrice état final
+        coordonnees([L_U, C_U], U, P),			% recupere les coordonnees de la piece P dans la matrice d'état U
+        coordonnees([L_Fin, C_Fin], Fin, P),		% recupere les coordonnees de la piece P dans la matrice d'état Fin
+        M is (abs(C_Fin - C_U) + abs(L_Fin - L_U)).	% calcule la distance de manhattan entre les coordonnees de P dans U et celles de P dans l'état final Fin
    
-    heuristique2(U, H) :- 
+    heuristique2(U, H) :-
         findall(
-            M,
-            (manhattan(P, U, M), P \= vide),
-            M_List
+            M,						% on regroupe les distances de manhattan calculées pour chaque pièce dans la liste M_List
+            (manhattan(P, U, M), P \= vide),		% calcule la distance de manhattan pour toutes les places P de U, on exclut vide
+            M_List					% M_List : liste des distances de manhattan à parcourir par chaque pièce
         ),
-        sumlist(M_List, H).
+        sumlist(M_List, H).				% H prend la somme des distances de manhattan de la liste M_List
 
