@@ -180,8 +180,10 @@ alignement_perdant(A, J) :-
 
 % A FAIRE
 successeur(J, M, [L,C]) :-
-	nth1(L, M, Ligne),
-	nth1(C, Ligne, J).
+	nth1(L, M, Ligne),	% on récupère la L-ième ligne Ligne de la matrice M
+	nth1(C, Ligne, E),	% on récupère le C-ième élément E de la ligne Ligne, E est donc l'élément de coordonnées [L,C] dans M
+	var(E),			% vrai si l'élément E trouvé aux coordonnées [L,C] n'est pas déjà marqué
+	E=J.			% on renvoie E
 
 	/**************************************
    	 EVALUATION HEURISTIQUE D'UNE SITUATION
@@ -200,10 +202,10 @@ nombre_alig_possible(J, S, N) :-
 	findall(
 		A,
 		(
-			alignement(A, S),
+			alignement(A, S),	% on recupere tous les alignements possibles pour le joueur J
 			possible(A, J)
 		),
-		Liste_A					% liste des alignements possibles pour J
+		Liste_A				% liste des alignements possibles pour J
 	),
 	length(Liste_A, N).			% N : nombre d'aligments possibles
 

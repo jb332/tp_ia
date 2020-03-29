@@ -70,6 +70,7 @@ A FAIRE : ECRIRE ici les clauses de negamax/5
 	negamax(J, Etat, P, Pmax, [Coup, Ret_Val]) :-
 		successeurs(J,Etat,Succ),			% renvoie la liste des successeurs sous la forme [Coup, Successeur]
 		loop_negamax(J, P, Pmax, Succ, Liste_Couples),	% appelle negamax sur tous les successeurs et récupère la liste des valeurs des successeurs sous la forme [Coup, valeur situation suivante]
+		!,
 		meilleur(Liste_Couples, [Coup, Val]),		% récupère la valeur maximale et son coup correspondant
 		Ret_Val is -Val.				% renvoie l'opposé de cette valeur
 
@@ -157,7 +158,7 @@ A FAIRE : ECRIRE ici les clauses de meilleur/2
 main(B, V, Pmax) :-
 	situation_initiale(M),
 	joueur_initial(J),
-	negamax(J, M, 1, Pmax, [B, V]).
+	negamax(J, M, 0, Pmax, [B, V]).
 
 test_main(Pmax, N) :-
 	Pmax > N.
@@ -182,15 +183,27 @@ test_main(Pmax, N) :-
 	!.
 
 test_main(N) :-	% N : profondeur maximale maximale testée
-	test_main(1, N).
+	test_main(0, N).
 
 test_main :-
-	test_main(7).
+	test_main(9).
 
 	/*
 A FAIRE :
 	Compléter puis tester le programme principal pour plusieurs valeurs de la profondeur maximale.
-	Pmax = 1, 2, 3, 4 ...
+	Pmax = 0 , 1, 2, 3, 4, 5, 6, 7, 8, 9
+
+	Pmax=0			Val=0	à l'état initial, l'heuristique vaut 0 (8-8)
+	Pmax=1	L=2	C=2	Val=4
+	Pmax=2	L=2	C=2	Val=1
+	Pmax=3	L=2	C=2	Val=3	de Pmax = 1 à Pmax = 7, l'heuristique se rapproche de 0
+	Pmax=4	L=2	C=2	Val=1	au fur-et-à-mesure que la profondeur / précision augmente
+	Pmax=5	L=2	C=2	Val=3
+	Pmax=6	L=2	C=2	Val=1
+	Pmax=7	L=2	C=2	Val=2
+	Pmax=8	L=1	C=1	Val=+oo	indique que [1,1] est le premier coup optimal pour gagner
+	Pmax=9	L=1	C=1	Val=0	cependant, avec une précision maximale, on observe que quel que soit le coup joué au départ, les chances de deux joueurs sont les mêmes car si les deux joueur jouent optimalement, il font systématiquement pat
+
 	Commentez les résultats obtenus.
 	*/
 
