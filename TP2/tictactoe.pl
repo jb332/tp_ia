@@ -63,21 +63,26 @@ alignement(D, Matrix) :- diagonale(D,Matrix).
 	 ********************************************/
 	
 ligne(L, M) :-
-	nth1(_, M, L).
+	nth1(_, M, L).			% verifie s'il existe un ligne de M qui vaut L
+
+test_ligne(L) :-
+	M = [[a,b,c], [d,e,f], [g,h,i]],
+	ligne(L, M).
 
 colonne(C, M) :-
-	length(M, N),
-	colonne(N, C, M).
+	length(M, N),			% N : taille d'un côté du morpion
+	colonne(N, C, M).		% appel à colonne\3, on teste d'abord la colonne N
 
 colonne(N, C, M) :-
 	findall(
 		E
 		,(
-			nth1(_, M, L),
-			nth1(N, L, E)
+			nth1(_, M, L),	% trouve toutes les lignes L de M
+			nth1(N, L, E)	% prend le N-ième élément de L
 		),
-		C
-	).
+		C					% liste des N-ième éléments de chaque ligne de M <=> N-ième colonne
+							% et vérification de la correspondance avec C
+	).						% si faux alors on c'est la clause ci-dessous qui est testée et on passe à la colonne suivante (par décrémentation de N) jusqu'à la colonne 1
 
 colonne(N, C, M) :-
 	N > 1,
@@ -118,6 +123,10 @@ seconde_diag(K, Diag, Matrix) :-
 	reverse(Matrix, Reversed_Matrix),
 	premiere_diag(K, Diag, Reversed_Matrix).
 
+test_diagonale(D) :-
+	M = [[a,b,c], [d,e,f], [g,h,i]],
+	diagonale(D, M).
+
 	/***********************************
 	 DEFINITION D'UN ALIGNEMENT POSSIBLE
 	 POUR UN JOUEUR DONNE
@@ -153,13 +162,13 @@ pour son adversaire.
 
 % A FAIRE
 
-alignement_gagnant(Ali, J) :-
-	possible(Ali,J),
-	ground(Ali).
+alignement_gagnant(A, J) :-
+	possible(A, J),
+	ground(A).
 
-alignement_perdant(Ali, J) :-
-	adversaire(J,Adv),
-	alignement_gagnant(Ali,Adv).
+alignement_perdant(A, J) :-
+	adversaire(J, Adv),
+	alignement_gagnant(A, Adv).
 
 	/******************************
 	DEFINITION D'UN ETAT SUCCESSEUR
@@ -170,9 +179,9 @@ alignement_perdant(Ali, J) :-
      */	
 
 % A FAIRE
-successeur(J,Etat,[L,C]) :-
-	nth1(L,Etat,Ligne),
-	nth1(C,Ligne,J).
+successeur(J, M, [L,C]) :-
+	nth1(L, M, Ligne),
+	nth1(C, Ligne, J).
 
 	/**************************************
    	 EVALUATION HEURISTIQUE D'UNE SITUATION
@@ -187,31 +196,70 @@ successeur(J,Etat,[L,C]) :-
  	   le nombre d'alignements possibles pour l'adversaire de J
 */
 
+nombre_alig_possible(J, S, N) :-
+	findall(
+		A,
+		(
+			alignement(A, S),
+			possible(A, J)
+		),
+		Liste_A					% liste des alignements possibles pour J
+	),
+	length(Liste_A, N).			% N : nombre d'aligments possibles
 
-heuristique(J,Situation,H) :-		% cas 1
-   H = 10000,				% grand nombre approximant +infini
-   alignement(Alig,Situation),
-   alignement_gagnant(Alig,J), !.
+
+heuristique(Joueur, Sit, H) :-	% cas trivial gagnant
+	alignement(A, Sit),
+	alignement_gagnant(A, Joueur),
+	!,	% si une situation gagnante est trouvée, on peut ignorer les autres alignements
+	H = 42000000.	% +oo
 	
-heuristique(J,Situation,H) :-		% cas 2
-   H = -10000,				% grand nombre approximant -infini
-   alignement(Alig,Situation),
-   alignement_perdant(Alig,J),!.	
+heuristique(Joueur, Sit, H) :-	% cas trivial perdant
+	alignement(A, Sit),
+	alignement_perdant(A, Joueur),
+	!,	% si une situation perdante est trouvée, on peut ignorer les autres alignements
+	H = -42000000.	% -oo
 
+heuristique(Joueur, Sit, H) :-	% cas général
+	nombre_alig_possible(Joueur, Sit, N_Alig_J),
+	adversaire(Joueur, Adv),
+	nombre_alig_possible(Adv, Sit, N_Alig_Adv),
+	H is N_Alig_J - N_Alig_Adv.
 
-% on ne vient ici que si les cut precedents n'ont pas fonctionne,
-% c-a-d si Situation n'est ni perdante ni gagnante.
-
-% A FAIRE 					cas 3
-heuristique(J,Situation,H) :-
-	findall(Ali, (alignement(Ali, Situation), possible(Ali, J)), L),
-	length(L, N_gentil),
-	adversaire(J, Mechant),
-	findall(Ali_M, (alignement(Ali_M, Situation), possible(Ali_M, Mechant)), L_Mechant),
-	length(L_Mechant, N_mechant),
-	H is N_gentil - N_mechant.
-	
-	
-
-
-
+test_heuristique :-
+	situation_initiale(M0),
+	M1 = [[o, x, x], [x, o, o], [x, _, o]], % o gagnant
+	M2 = [[x, o, o], [o, x, x], [o, _, x]], % o perdant
+	M3 = [[o, x, x], [x, o, o], [x, o, x]], % match nul
+	heuristique(o, M0, H0),
+	heuristique(o, M1, H1),
+	heuristique(o, M2, H2),
+	heuristique(o, M3, H3),
+	write('M0 = '),
+	writeln(M0),
+	write('M1 = '),
+	writeln(M1),
+	write('M2 = '),
+	writeln(M2),
+	write('M3 = '),
+	writeln(M3),
+	nl,
+	writeln('H0 ='),
+	writeln('Expected : 0'),
+	write('Gotten : '),
+	writeln(H0),
+	nl,
+	writeln('H1 ='),
+	writeln('Expected : 42000000 (+oo)'),
+	write('Gotten : '),
+	writeln(H1),
+	nl,
+	writeln('H2 ='),
+	writeln('Expected : -42000000 (-oo)'),
+	write('Gotten : '),
+	writeln(H2),
+	nl,
+	writeln('H3 ='),
+	writeln('Expected : 0'),
+	write('Gotten : '),
+	writeln(H3).

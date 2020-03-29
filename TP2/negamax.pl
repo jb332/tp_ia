@@ -59,21 +59,19 @@ A FAIRE : ECRIRE ici les clauses de negamax/5
 
 	% profondeur max atteinte, evalutation de la valeur du coup avec l'heuristique
 	negamax(J, Etat, Pmax, Pmax, [_, Val]) :-
-		heuristique(J, Etat, H),
-		Val is -H.
+		heuristique(J, Etat, Val).
 
 	% pat
 	negamax(J, Etat, _, _, [_, Val]) :-
 		situation_terminale(J, Etat),
-		heuristique(J, Etat, H),
-		Val is -H.
+		heuristique(J, Etat, Val).
 
 	% boucle
 	negamax(J, Etat, P, Pmax, [Coup, Ret_Val]) :-
-		successeurs(J,Etat,Succ),
-		loop_negamax(J, P, Pmax, Succ, Liste_Couples),
-		meilleur(Liste_Couples, [Coup, Val]),
-		Ret_Val is -Val.
+		successeurs(J,Etat,Succ),			% renvoie la liste des successeurs sous la forme [Coup, Successeur]
+		loop_negamax(J, P, Pmax, Succ, Liste_Couples),	% appelle negamax sur tous les successeurs et récupère la liste des valeurs des successeurs sous la forme [Coup, valeur situation suivante]
+		meilleur(Liste_Couples, [Coup, Val]),		% récupère la valeur maximale et son coup correspondant
+		Ret_Val is -Val.				% renvoie l'opposé de cette valeur
 
 	/*******************************************
 	 DEVELOPPEMENT D'UNE SITUATION NON TERMINALE
@@ -140,38 +138,54 @@ A FAIRE : commenter chaque litteral de la 2eme clause de loop_negamax/5,
 A FAIRE : ECRIRE ici les clauses de meilleur/2
 	*/
 
-	meilleur_aux([], Meilleur_Couple, Meilleur_Couple).
+	meilleur([], Meilleur_Couple, Meilleur_Couple).			% cas trivial : fin de la liste, on renvoie le meilleur couple
 
-	meilleur_aux([[Coup, Valeur] | Tail], [_, MValeur], Final) :-
-		Valeur > MValeur,
-		meilleur_aux(Tail, [Coup, Valeur], Final).
+	meilleur([[Coup, Valeur] | Tail], [_, MValeur], Final) :-	% cas mise à jour du meilleur coup
+		Valeur < MValeur,
+		meilleur(Tail, [Coup, Valeur], Final).
 
-	meilleur_aux([_ | Tail], Meilleur_Couple, Final) :-
-		meilleur_aux(Tail, Meilleur_Couple, Final).
+	meilleur([_ | Tail], Meilleur_Couple, Final) :-			% cas pas de mise à jour du meilleur coup
+		meilleur(Tail, Meilleur_Couple, Final).
 		
 	meilleur(Liste_de_Couples, Meilleur_Couple) :-
-		meilleur_aux(Liste_de_Couples, [[0,0], -99999], Meilleur_Couple).
+		meilleur(Liste_de_Couples, [[0,0], 42000001], Meilleur_Couple).
 
 	/******************
   	PROGRAMME PRINCIPAL
   	*******************/
 
-%main(B,V, Pmax) :-
-main(Pmax) :-
-	situation_initiale(Etat),
-	negamax(J, Etat, 0, Pmax, [[L, C], Val]),
-	write("Meilleur coup a jouer :"),
+main(B, V, Pmax) :-
+	situation_initiale(M),
+	joueur_initial(J),
+	negamax(J, M, 1, Pmax, [B, V]).
+
+test_main(Pmax, N) :-
+	Pmax > N.
+
+test_main(Pmax, N) :-
+	write('Pmax = '),
+	writeln(Pmax),
+	main([L, C], V, Pmax),
 	nl,
-	writeln("L = "),
+	write('L = '),
 	writeln(L),
 	nl,
-	writeln("C = "),
+	write('C = '),
 	writeln(C),
 	nl,
-	writeln("Valeur = "),
-	writeln(Val),
-	nl.        
+	write('Valeur = '),
+	writeln(V),
+	nl,
+	nl,
+	Pmax_new is Pmax + 1,
+	test_main(Pmax_new, N),
+	!.
 
+test_main(N) :-	% N : profondeur maximale maximale testée
+	test_main(1, N).
+
+test_main :-
+	test_main(7).
 
 	/*
 A FAIRE :
